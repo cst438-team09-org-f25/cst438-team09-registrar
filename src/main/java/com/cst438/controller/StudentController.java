@@ -38,8 +38,22 @@ public class StudentController {
 		// method to retrive the enrollments given the year, semester and id 
 		// of the logged in student.
 		// Return a list of EnrollmentDTO.
+       User student = getLoggedInStudent(principal);
 
-      return null;
+       List<Enrollment> enrollments =
+               enrollmentRepository.findByYearAndSemesterOrderByCourseId(
+                       year,
+                       semester,
+                       student.getId()
+               );
+
+       List<EnrollmentDTO> result = new ArrayList<>();
+
+       for (Enrollment enrollment : enrollments) {
+           result.add(toDTO(enrollment));
+       }
+
+       return result;
    }
 
    // return transcript for student
@@ -51,7 +65,63 @@ public class StudentController {
 		// method to retrive the enrollments given the id 
 		// of the logged in student.
 		// Return a list of EnrollmentDTO.
-		
-        return null;
+
+        User student = getLoggedInStudent(principal);
+
+        List<Enrollment> enrollments =
+                enrollmentRepository.findEnrollmentsByStudentIdOrderByTermId(
+                        student.getId()
+                );
+
+        List<EnrollmentDTO> result = new ArrayList<>();
+
+        for (Enrollment enrollment : enrollments) {
+            result.add(toDTO(enrollment));
+        }
+
+        return result;
+    }
+
+    private User getLoggedInStudent(Principal principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "student is not authenticated"
+            );
+        }
+
+        User student = userRepository.findByEmail(principal.getName());
+
+        if (student == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "student not found"
+            );
+        }
+
+        return student;
+    }
+
+    private EnrollmentDTO toDTO(Enrollment enrollment) {
+        User student = enrollment.getStudent();
+        Section section = enrollment.getSection();
+
+        return new EnrollmentDTO(
+                enrollment.getEnrollmentId(),
+                enrollment.getGrade(),
+                student.getId(),
+                student.getName(),
+                student.getEmail(),
+                section.getCourse().getCourseId(),
+                section.getCourse().getTitle(),
+                section.getSectionId(),
+                section.getSectionNo(),
+                section.getBuilding(),
+                section.getRoom(),
+                section.getTimes(),
+                section.getCourse().getCredits(),
+                section.getTerm().getYear(),
+                section.getTerm().getSemester()
+        );
     }
 }
