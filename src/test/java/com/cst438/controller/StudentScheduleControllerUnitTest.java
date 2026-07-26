@@ -10,7 +10,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.sql.Date;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -215,88 +214,6 @@ class StudentScheduleControllerUnitTest {
         assertEquals(404, exception.getStatusCode().value());
         assertEquals("enrollment not found", exception.getReason());
         verify(enrollmentRepository, never()).delete(any());
-    }
-
-    @Test
-    void getSectionEnrollmentsReturnsRosterForAssignedInstructor() {
-        Principal instructorPrincipal = mock(Principal.class);
-        User instructor = mock(User.class);
-        Enrollment enrollment = createSavedEnrollment(301);
-
-        when(instructorPrincipal.getName()).thenReturn("instructor@csumb.edu");
-        when(userRepository.findByEmail("instructor@csumb.edu"))
-                .thenReturn(instructor);
-        when(instructor.getEmail()).thenReturn("instructor@csumb.edu");
-        when(section.getInstructorEmail()).thenReturn("instructor@csumb.edu");
-        when(enrollmentRepository
-                .findEnrollmentsBySectionNoOrderByStudentId(5001))
-                .thenReturn(List.of(enrollment));
-
-        List<EnrollmentDTO> result = controller.getSectionEnrollments(
-                5001,
-                instructorPrincipal);
-
-        assertEquals(1, result.size());
-        assertEquals(301, result.get(0).enrollmentId());
-        assertEquals(10, result.get(0).studentId());
-        verify(enrollmentRepository)
-                .findEnrollmentsBySectionNoOrderByStudentId(5001);
-    }
-
-    @Test
-    void getSectionEnrollmentsRejectsSectionAssignedToAnotherInstructor() {
-        Principal instructorPrincipal = mock(Principal.class);
-        User instructor = mock(User.class);
-
-        when(instructorPrincipal.getName()).thenReturn("instructor@csumb.edu");
-        when(userRepository.findByEmail("instructor@csumb.edu"))
-                .thenReturn(instructor);
-        when(instructor.getEmail()).thenReturn("instructor@csumb.edu");
-        when(section.getInstructorEmail()).thenReturn("other@csumb.edu");
-
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
-                () -> controller.getSectionEnrollments(
-                        5001,
-                        instructorPrincipal));
-
-        assertEquals(403, exception.getStatusCode().value());
-        assertEquals("section does not belong to the logged-in instructor",
-                exception.getReason());
-        verify(enrollmentRepository, never())
-                .findEnrollmentsBySectionNoOrderByStudentId(anyInt());
-    }
-
-    @Test
-    void getSectionEnrollmentsRejectsMissingSection() {
-        Principal instructorPrincipal = mock(Principal.class);
-        User instructor = mock(User.class);
-
-        when(instructorPrincipal.getName()).thenReturn("instructor@csumb.edu");
-        when(userRepository.findByEmail("instructor@csumb.edu"))
-                .thenReturn(instructor);
-        when(sectionRepository.findById(9999)).thenReturn(Optional.empty());
-
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
-                () -> controller.getSectionEnrollments(
-                        9999,
-                        instructorPrincipal));
-
-        assertEquals(404, exception.getStatusCode().value());
-        assertEquals("section not found", exception.getReason());
-        verifyNoInteractions(enrollmentRepository);
-    }
-
-    @Test
-    void getSectionEnrollmentsRejectsMissingPrincipal() {
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
-                () -> controller.getSectionEnrollments(5001, null));
-
-        assertEquals(401, exception.getStatusCode().value());
-        assertEquals("instructor is not authenticated", exception.getReason());
-        verifyNoInteractions(enrollmentRepository);
     }
 
     private void setOpenAddWindow() {

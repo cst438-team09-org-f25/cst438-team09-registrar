@@ -18,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @RestController
 public class StudentScheduleController {
@@ -138,35 +137,6 @@ public class StudentScheduleController {
         enrollmentRepository.delete(enrollment);
     }
 
-    // instructor retrieves the roster for one of their sections
-    @GetMapping("/sections/{sectionNo}/enrollments")
-    @PreAuthorize("hasAuthority('SCOPE_ROLE_INSTRUCTOR')")
-    public List<EnrollmentDTO> getSectionEnrollments(
-            @PathVariable int sectionNo,
-            Principal principal) {
-
-        User instructor = getLoggedInInstructor(principal);
-
-        Section section = sectionRepository.findById(sectionNo)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "section not found"
-                ));
-
-        if (!instructor.getEmail().equals(section.getInstructorEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "section does not belong to the logged-in instructor"
-            );
-        }
-
-        return enrollmentRepository
-                .findEnrollmentsBySectionNoOrderByStudentId(sectionNo)
-                .stream()
-                .map(this::toDTO)
-                .toList();
-    }
-
     private User getLoggedInStudent(Principal principal) {
         if (principal == null) {
             throw new ResponseStatusException(
@@ -185,26 +155,6 @@ public class StudentScheduleController {
         }
 
         return student;
-    }
-
-    private User getLoggedInInstructor(Principal principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "instructor is not authenticated"
-            );
-        }
-
-        User instructor = userRepository.findByEmail(principal.getName());
-
-        if (instructor == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "instructor not found"
-            );
-        }
-
-        return instructor;
     }
 
     private EnrollmentDTO toDTO(Enrollment enrollment) {
