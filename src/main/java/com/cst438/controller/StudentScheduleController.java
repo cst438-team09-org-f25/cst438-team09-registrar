@@ -18,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @RestController
 public class StudentScheduleController {
