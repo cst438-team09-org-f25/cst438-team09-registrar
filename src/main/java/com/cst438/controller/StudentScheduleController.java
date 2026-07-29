@@ -96,8 +96,11 @@ public class StudentScheduleController {
         enrollment.setGrade(null);
 
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        EnrollmentDTO result = toDTO(savedEnrollment);
 
-        return toDTO(savedEnrollment);
+        gradebook.sendMessage("addEnrollment", result);
+
+        return result;
     }
 
     // student drops a course
@@ -135,6 +138,8 @@ public class StudentScheduleController {
         }
 
         enrollmentRepository.delete(enrollment);
+
+        gradebook.sendMessage("deleteEnrollment", enrollmentId);
     }
 
     private User getLoggedInStudent(Principal principal) {

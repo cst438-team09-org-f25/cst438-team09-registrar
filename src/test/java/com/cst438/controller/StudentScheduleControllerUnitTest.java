@@ -87,7 +87,8 @@ class StudentScheduleControllerUnitTest {
 
         verify(enrollmentRepository)
                 .findEnrollmentBySectionNoAndStudentId(5001, 10);
-        verifyNoInteractions(gradebook);
+
+        verify(gradebook).sendMessage("addEnrollment", result);
     }
 
     @Test
@@ -160,7 +161,7 @@ class StudentScheduleControllerUnitTest {
         controller.dropCourse(301, principal);
 
         verify(enrollmentRepository).delete(enrollment);
-        verifyNoInteractions(gradebook);
+        verify(gradebook).sendMessage("deleteEnrollment", 301);
     }
 
     @Test
