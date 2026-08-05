@@ -12,8 +12,12 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Random;
+
+import org.openqa.selenium.JavascriptExecutor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StudentViewsAssignmentsSystemTest {
 
@@ -40,14 +44,28 @@ public class StudentViewsAssignmentsSystemTest {
     @Test
     void studentViewsNewAssignmentWithBlankScore() {
 
+        /*
+         * Generate a unique assignment title so the test can be run
+         * repeatedly without conflicting with an existing assignment.
+         */
+        String assignmentTitle =
+                "assignment" + new Random().nextInt(1_000_000);
+
+        /*
+         * The due date must fall within the Fall 2025 term dates.
+         */
+        String dueDate = "2025-10-15";
+
         loginAsInstructor();
 
         selectFall2025();
 
         openCst599Assignments();
 
-        // TODO: Generate a randomized assignment title and create the assignment.
-        // TODO: Verify the instructor sees the new assignment.
+        addAssignment(assignmentTitle, dueDate);
+
+        verifyAssignmentAppears(assignmentTitle);
+
         // TODO: Log out and log in as samb@csumb.edu.
         // TODO: Open the student assignments page and select Fall 2025.
         // TODO: Verify CST599 and the new assignment appear.
@@ -133,5 +151,76 @@ public class StudentViewsAssignmentsSystemTest {
                                 "'Assignments for cst599')]"
                 )
         ));
+    }
+
+    private void addAssignment(
+            String assignmentTitle,
+            String dueDate) {
+
+        driver.findElement(By.id("addAssignmentButton")).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.id("assignmentTitle")
+        ));
+
+        driver.findElement(By.id("assignmentTitle"))
+                .sendKeys(assignmentTitle);
+
+        WebElement dueDateInput =
+                driver.findElement(By.id("assignmentDueDate"));
+
+        JavascriptExecutor javascript = (JavascriptExecutor) driver;
+
+        javascript.executeScript(
+                """
+                const input = arguments[0];
+                const value = arguments[1];
+                const setter =
+                    Object.getOwnPropertyDescriptor(
+                        HTMLInputElement.prototype,
+                        'value'
+                    ).set;
+        
+                setter.call(input, value);
+                input.dispatchEvent(
+                    new Event('input', { bubbles: true })
+                );
+                input.dispatchEvent(
+                    new Event('change', { bubbles: true })
+                );
+                """,
+                dueDateInput,
+                dueDate
+        );
+
+        driver.findElement(By.id("saveAssignmentButton")).click();
+
+        /*
+         * AssignmentAdd closes its dialog after a successful POST.
+         */
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(
+                By.id("assignmentTitle")
+        ));
+    }
+
+    private void verifyAssignmentAppears(String assignmentTitle) {
+
+        WebElement assignmentRow =
+                wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        assignmentRow(assignmentTitle)
+                ));
+
+        assertTrue(
+                assignmentRow.getText().contains(assignmentTitle),
+                "New assignment title was not displayed"
+        );
+    }
+
+    private By assignmentRow(String assignmentTitle) {
+        return By.xpath(
+                "//tr[td[normalize-space()='" +
+                        assignmentTitle +
+                        "']]"
+        );
     }
 }
