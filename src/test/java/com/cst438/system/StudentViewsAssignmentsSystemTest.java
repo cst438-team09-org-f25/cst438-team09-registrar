@@ -66,8 +66,14 @@ public class StudentViewsAssignmentsSystemTest {
 
         verifyAssignmentAppears(assignmentTitle);
 
-        // TODO: Log out and log in as samb@csumb.edu.
-        // TODO: Open the student assignments page and select Fall 2025.
+        logout();
+
+        loginAsStudent();
+
+        openStudentAssignments();
+
+        selectStudentFall2025();
+
         // TODO: Verify CST599 and the new assignment appear.
         // TODO: Verify the assignment score is blank.
     }
@@ -214,6 +220,95 @@ public class StudentViewsAssignmentsSystemTest {
                 assignmentRow.getText().contains(assignmentTitle),
                 "New assignment title was not displayed"
         );
+    }
+
+    private void logout() {
+
+        WebElement logoutLink =
+                wait.until(ExpectedConditions.elementToBeClickable(
+                        By.id("logoutLink")
+                ));
+
+        logoutLink.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.id("email")
+        ));
+    }
+
+    private void loginAsStudent() {
+
+        driver.findElement(By.id("email"))
+                .sendKeys("samb@csumb.edu");
+
+        driver.findElement(By.id("password"))
+                .sendKeys("sam2025");
+
+        driver.findElement(By.id("loginButton")).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//h1[normalize-space()='Student Home']")
+        ));
+    }
+
+    private void openStudentAssignments() {
+
+        WebElement assignmentsLink =
+                wait.until(ExpectedConditions.elementToBeClickable(
+                        By.id("viewAssignmentsLink")
+                ));
+
+        assignmentsLink.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//h3[normalize-space()='Assignments']")
+        ));
+    }
+
+    private void selectStudentFall2025() {
+
+        /*
+         * Locate the two term inputs associated with the
+         * "Get Assignments" button.
+         *
+         * The first input is year and the second is semester.
+         */
+        WebElement getAssignmentsButton =
+                wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath(
+                                "//button[normalize-space()='Get Assignments']"
+                        )
+                ));
+
+        List<WebElement> termInputs =
+                driver.findElements(By.xpath(
+                        "//button[normalize-space()='Get Assignments']" +
+                                "/preceding-sibling::input"
+                ));
+
+        assertEquals(
+                2,
+                termInputs.size(),
+                "Expected year and semester input fields"
+        );
+
+        WebElement yearInput = termInputs.get(0);
+        WebElement semesterInput = termInputs.get(1);
+
+        yearInput.clear();
+        yearInput.sendKeys("2025");
+
+        semesterInput.clear();
+        semesterInput.sendKeys("Fall");
+
+        getAssignmentsButton.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath(
+                        "//table[thead/tr/th[normalize-space()='Course ID']]" +
+                                "//tbody/tr"
+                )
+        ));
     }
 
     private By assignmentRow(String assignmentTitle) {
