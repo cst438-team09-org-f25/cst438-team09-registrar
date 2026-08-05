@@ -74,8 +74,7 @@ public class StudentViewsAssignmentsSystemTest {
 
         selectStudentFall2025();
 
-        // TODO: Verify CST599 and the new assignment appear.
-        // TODO: Verify the assignment score is blank.
+        verifyStudentAssignment(assignmentTitle);
     }
 
     private void loginAsInstructor() {
@@ -309,6 +308,48 @@ public class StudentViewsAssignmentsSystemTest {
                                 "//tbody/tr"
                 )
         ));
+    }
+
+    private void verifyStudentAssignment(String assignmentTitle) {
+
+        WebElement assignmentRow =
+                wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath(
+                                "//table[thead/tr/th[" +
+                                        "normalize-space()='Course ID']]" +
+                                        "//tbody/tr[" +
+                                        "td[2][normalize-space()='" +
+                                        assignmentTitle +
+                                        "']]"
+                        )
+                ));
+
+        List<WebElement> cells =
+                assignmentRow.findElements(By.tagName("td"));
+
+        assertEquals(
+                5,
+                cells.size(),
+                "Expected five columns in student assignment row"
+        );
+
+        assertEquals(
+                "cst599",
+                cells.get(0).getText().trim(),
+                "Assignment was not listed under cst599"
+        );
+
+        assertEquals(
+                assignmentTitle,
+                cells.get(1).getText().trim(),
+                "Student assignment title did not match"
+        );
+
+        assertEquals(
+                "",
+                cells.get(4).getText().trim(),
+                "New assignment score should be blank"
+        );
     }
 
     private By assignmentRow(String assignmentTitle) {
